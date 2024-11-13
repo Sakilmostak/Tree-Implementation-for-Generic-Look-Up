@@ -19,13 +19,13 @@ impl LookUpTree {
         }
     }
 
-    pub fn insert(&mut self, keychain: &Vec<&str>, count: i32) {
+    pub fn insert(&mut self, keychain: Vec<&str>, count: i32) {
         let mut parent = &mut self.root_node;
         parent.count += count;
         for key in keychain {
             // if child is present, fetch the node
-            if parent.child.contains_key(key.to_owned()) {
-                parent = parent.child.get_mut(key.to_owned()).unwrap();
+            if parent.child.contains_key(key) {
+                parent = parent.child.get_mut(key).unwrap();
                 parent.count += count;
             }
             // if child is not present, create a new node
@@ -37,7 +37,7 @@ impl LookUpTree {
                         child: HashMap::new(),
                     }),
                 );
-                parent = parent.child.get_mut(key.to_owned()).unwrap();
+                parent = parent.child.get_mut(key).unwrap();
             }
         }
     }
@@ -82,13 +82,13 @@ pub fn search(cur_node: &Node, key: &Vec<&str>, postfix_key_count: &[u8], index:
 
 pub fn main() {
     let mut tree = LookUpTree::new();
-    tree.insert(&vec!["a", "b", "c", "d"], 1);
-    tree.insert(&vec!["a", "c", "b", "d"], 2);
-    tree.insert(&vec!["b", "b", "c", "d"], 3);
-    tree.insert(&vec!["b", "b", "c", "a"], 4);
-    tree.insert(&vec!["b", "c", "c", "c"], 5);
-    tree.insert(&vec!["c", "b", "d", "a"], 6);
-    tree.insert(&vec!["c", "a", "b", "c"], 7);
+    tree.insert(vec!["a", "b", "c", "d"], 1);
+    tree.insert(vec!["b", "b", "c", "d"], 3);
+    tree.insert(vec!["b", "b", "c", "a"], 4);
+    tree.insert(vec!["b", "c", "c", "c"], 5);
+    tree.insert(vec!["a", "c", "b", "d"], 2);
+    tree.insert(vec!["c", "b", "d", "a"], 6);
+    tree.insert(vec!["c", "a", "b", "c"], 7);
 
     let query_strings = [
         "a,b,c,d", "*,*,*,*", "*,b,*,*", "*,b,c,*", "*,b,c,d", "a,b,c,*", "a,b,*,*",
@@ -102,18 +102,15 @@ pub fn main() {
 
     for query in queries {
         // count the number of keys in the postfix order
-        let mut postfix_key_count = vec![];
+        let mut postfix_key_count = vec![0; query.len()];
         let mut key_count = 0;
 
-        for key in query.iter().cloned().rev() {
+        for (index,key) in query.iter().cloned().rev().enumerate() {
             if key != "*" {
                 key_count += 1;
             }
-            postfix_key_count.push(key_count);
+            postfix_key_count.insert(query.len() - index - 1,key_count);
         }
-
-        // reverse the order from prefix to postfix
-        postfix_key_count.reverse();
 
         let result = search(&tree.root_node, &query, &postfix_key_count, 0);
         println!("Result for {:?} is {}", query, result);
